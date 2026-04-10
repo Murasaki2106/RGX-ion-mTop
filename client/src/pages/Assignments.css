@@ -1,0 +1,60 @@
+.assignments-page {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.full-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.task-item.complete-list {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+}
+
+.flex-item {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.task-info {
+  flex: 1;
+}
+
+.task-meta {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-end;
+}
+
+.due-date {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge.pending {
+  background: rgba(245, 158, 11, 0.2);
+  color: var(--accent-warning);
+}
+
+.badge.completed {
+  background: rgba(16, 185, 129, 0.2);
+  color: var(--accent-success);
+}
