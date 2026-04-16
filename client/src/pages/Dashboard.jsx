@@ -32,9 +32,6 @@ function Dashboard() {
           <h1>Welcome back, {user.name.split(' ')[0]}</h1>
           <p className="text-muted">Here's what's happening today.</p>
         </div>
-        <div className="user-profile">
-          <img src={user.avatar} alt="Profile" className="avatar" />
-        </div>
       </header>
 
       <div className="dashboard-grid">

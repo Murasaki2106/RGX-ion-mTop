@@ -1,8 +1,15 @@
-import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, BookOpen, GraduationCap, LogOut, Bell } from 'lucide-react';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { LayoutDashboard, BookOpen, GraduationCap, ClipboardList, LogOut, Bell } from 'lucide-react';
 import './Sidebar.css';
 
-function Sidebar() {
+function Sidebar({ onLogout }) {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    onLogout();
+    navigate('/login');
+  };
+
   return (
     <aside className="sidebar glass-card">
       <div className="sidebar-header">
@@ -25,6 +32,11 @@ function Sidebar() {
           <GraduationCap size={20} />
           <span>Courses</span>
         </NavLink>
+
+        <NavLink to="/results" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+          <ClipboardList size={20} />
+          <span>Exam Results</span>
+        </NavLink>
       </nav>
 
       <div className="sidebar-footer">
@@ -32,7 +44,7 @@ function Sidebar() {
           <Bell size={20} />
           <span>Notifications</span>
         </button>
-        <button className="nav-item action-btn error" onClick={() => alert('Logout successful!')}>
+        <button className="nav-item action-btn error" onClick={handleLogout}>
           <LogOut size={20} />
           <span>Logout</span>
         </button>
@@ -42,3 +54,4 @@ function Sidebar() {
 }
 
 export default Sidebar;
+
