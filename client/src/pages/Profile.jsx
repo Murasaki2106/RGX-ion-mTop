@@ -2,15 +2,17 @@ import { useState, useEffect } from 'react';
 import { GraduationCap, BookOpen, Mail, Phone, MapPin, Calendar, Heart, Users, UserCheck } from 'lucide-react';
 import './Profile.css';
 
-function Profile() {
+function Profile({ userEmail }) {
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/profile')
-      .then(res => res.json())
-      .then(data => setData(data))
-      .catch(console.error);
-  }, []);
+    if (userEmail) {
+      fetch(`http://localhost:5000/api/profile?email=${encodeURIComponent(userEmail)}`)
+        .then(res => res.json())
+        .then(data => setData(data))
+        .catch(console.error);
+    }
+  }, [userEmail]);
 
   if (!data) return <div className="loader">Loading...</div>;
 

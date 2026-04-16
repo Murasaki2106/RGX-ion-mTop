@@ -23,7 +23,7 @@ function formatDateTime(dateStr) {
   });
 }
 
-function AssignmentDetail() {
+function AssignmentDetail({ userEmail }) {
   const { id } = useParams();
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
@@ -34,7 +34,8 @@ function AssignmentDetail() {
   const [justSubmitted, setJustSubmitted] = useState(false);
 
   useEffect(() => {
-    fetch(`http://localhost:5000/api/assignments/${id}`)
+    if (!userEmail) return;
+    fetch(`http://localhost:5000/api/assignments/${id}?email=${encodeURIComponent(userEmail)}`)
       .then(res => res.json())
       .then(data => {
         setAssignment(data.assignment);
@@ -43,7 +44,7 @@ function AssignmentDetail() {
         }
       })
       .catch(console.error);
-  }, [id]);
+  }, [id, userEmail]);
 
   if (!assignment) return <div className="loader">Loading...</div>;
 
@@ -51,15 +52,48 @@ function AssignmentDetail() {
   const isPastDue = new Date(assignment.dueDate) < new Date() && !isCompleted;
   const statusClass = isCompleted ? 'turned-in' : isPastDue ? 'overdue' : 'not-turned-in';
 
-  const handleFileSelect = (e) => {
-    const files = Array.from(e.target.files);
-    const newFiles = files.map(f => ({
-      name: f.name,
-      size: f.size > 1048576
-        ? (f.size / 1048576).toFixed(1) + ' MB'
-        : (f.size / 1024).toFixed(0) + ' KB',
-      isLocal: true
+  const handleFileSelect = async (e) => {
+    const rawFiles = Array.from(e.target.files);
+    
+    // Strict validation: Only allow PDF files
+    const files = rawFiles.filter(f => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'));
+    if (files.length !== rawFiles.length) {
+      alert("Invalid format: You may only upload PDF (.pdf) documents for assignments.");
+      if (files.length === 0) return;
+    }
+    
+    const newFiles = await Promise.all(files.map(f => {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          let fileType = f.type;
+          if (!fileType) {
+            const ext = f.name.split('.').pop().toLowerCase();
+            if (ext === 'docx') fileType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+            else if (ext === 'doc') fileType = 'application/msword';
+            else if (ext === 'xlsx') fileType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+            else if (ext === 'xls') fileType = 'application/vnd.ms-excel';
+            else if (ext === 'pptx') fileType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+            else if (ext === 'ppt') fileType = 'application/vnd.ms-powerpoint';
+            else if (ext === 'zip') fileType = 'application/zip';
+            else if (ext === 'csv') fileType = 'text/csv';
+            else if (ext === 'txt') fileType = 'text/plain';
+            else if (ext === 'pdf') fileType = 'application/pdf';
+          }
+          resolve({
+            name: f.name,
+            size: f.size > 1048576
+              ? (f.size / 1048576).toFixed(1) + ' MB'
+              : (f.size / 1024).toFixed(0) + ' KB',
+            type: fileType || 'Unknown Type',
+            dataUrl: reader.result,
+            isLocal: true
+          });
+        };
+        reader.readAsDataURL(f);
+      });
     }));
+
     setLocalFiles(prev => [...prev, ...newFiles]);
   };
 
@@ -68,11 +102,11 @@ function AssignmentDetail() {
   };
 
   const handleSubmit = async () => {
-    if (localFiles.length === 0) return;
+    if (localFiles.length === 0 || !userEmail) return;
     setSubmitting(true);
 
     try {
-      const res = await fetch(`http://localhost:5000/api/assignments/${id}/submit`, {
+      const res = await fetch(`http://localhost:5000/api/assignments/${id}/submit?email=${encodeURIComponent(userEmail)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ files: localFiles })
@@ -221,11 +255,12 @@ function AssignmentDetail() {
           {!isCompleted && (
             <div className="upload-area" onClick={() => fileInputRef.current?.click()}>
               <Upload size={28} />
-              <p>Drag files here or <span className="browse-link">browse</span></p>
+              <p>Drag files here or <span className="browse-link">browse</span> (PDF Only)</p>
               <input
                 ref={fileInputRef}
                 type="file"
                 multiple
+                accept=".pdf,application/pdf"
                 onChange={handleFileSelect}
               />
             </div>

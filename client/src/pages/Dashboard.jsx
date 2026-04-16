@@ -4,15 +4,17 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { BookOpen, AlertCircle, Clock, CheckCircle } from 'lucide-react';
 import './Dashboard.css';
 
-function Dashboard() {
+function Dashboard({ userEmail }) {
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/dashboard')
-      .then(res => res.json())
-      .then(data => setData(data))
-      .catch(console.error);
-  }, []);
+    if (userEmail) {
+      fetch(`http://localhost:5000/api/dashboard?email=${encodeURIComponent(userEmail)}`)
+        .then(res => res.json())
+        .then(data => setData(data))
+        .catch(console.error);
+    }
+  }, [userEmail]);
 
   if (!data) return <div className="loader">Loading...</div>;
 

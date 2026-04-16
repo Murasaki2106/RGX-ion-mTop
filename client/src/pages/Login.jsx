@@ -23,12 +23,32 @@ function Login({ onLogin }) {
 
     setLoading(true);
 
-    // Simulate login – accept any credentials
-    setTimeout(() => {
+    try {
+      const response = await fetch('http://localhost:5000/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await response.json();
+
       setLoading(false);
-      onLogin(rememberMe);
-      navigate('/dashboard');
-    }, 800);
+
+      if (data.success) {
+        onLogin(data.email, data.role, rememberMe);
+        if (data.role === 'Professor') {
+          navigate('/prof-dashboard');
+        } else {
+          navigate('/dashboard');
+        }
+      } else {
+        setError(data.error || 'Invalid credentials');
+      }
+    } catch (err) {
+      setLoading(false);
+      setError('Failed to connect to the server.');
+    }
   };
 
   return (
@@ -39,7 +59,7 @@ function Login({ onLogin }) {
             <GraduationCap size={28} />
           </div>
           <h1>RGX ion mTop</h1>
-          <p>Sign in to your student portal</p>
+          <p>Sign in to your portal</p>
         </div>
 
         {error && (

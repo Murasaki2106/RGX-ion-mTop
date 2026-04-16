@@ -10,21 +10,23 @@ function getGradeClass(grade) {
   return 'c';
 }
 
-function ExamResults() {
+function ExamResults({ userEmail }) {
   const [data, setData] = useState(null);
   const [selectedSem, setSelectedSem] = useState('');
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/results')
-      .then(res => res.json())
-      .then(data => {
-        setData(data);
-        if (data.semesters.length > 0) {
-          setSelectedSem(data.semesters[data.semesters.length - 1]);
-        }
-      })
-      .catch(console.error);
-  }, []);
+    if (userEmail) {
+      fetch(`http://localhost:5000/api/results?email=${encodeURIComponent(userEmail)}`)
+        .then(res => res.json())
+        .then(data => {
+          setData(data);
+          if (data.semesters.length > 0) {
+            setSelectedSem(data.semesters[data.semesters.length - 1]);
+          }
+        })
+        .catch(console.error);
+    }
+  }, [userEmail]);
 
   if (!data) return <div className="loader">Loading...</div>;
 

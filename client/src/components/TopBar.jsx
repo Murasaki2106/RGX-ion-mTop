@@ -3,18 +3,20 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ChevronDown, User, Settings, HelpCircle, LogOut } from 'lucide-react';
 import './TopBar.css';
 
-function TopBar({ onLogout }) {
+function TopBar({ userEmail, onLogout }) {
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState(null);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/profile')
-      .then(res => res.json())
-      .then(data => setUser(data.profile))
-      .catch(console.error);
-  }, []);
+    if (userEmail) {
+      fetch(`http://localhost:5000/api/profile?email=${encodeURIComponent(userEmail)}`)
+        .then(res => res.json())
+        .then(data => setUser(data.profile))
+        .catch(console.error);
+    }
+  }, [userEmail]);
 
   const handleLogout = () => {
     setOpen(false);
@@ -52,20 +54,22 @@ function TopBar({ onLogout }) {
                 </div>
               </div>
 
-              <div className="dropdown-stats">
-                <div className="dd-stat">
-                  <span className="dd-stat-value">{user.cgpa}</span>
-                  <span className="dd-stat-label">CGPA</span>
+              {user.role !== 'Professor' && (
+                <div className="dropdown-stats">
+                  <div className="dd-stat">
+                    <span className="dd-stat-value">{user.cgpa}</span>
+                    <span className="dd-stat-label">CGPA</span>
+                  </div>
+                  <div className="dd-stat">
+                    <span className="dd-stat-value">{user.overallAttendance}%</span>
+                    <span className="dd-stat-label">Attendance</span>
+                  </div>
+                  <div className="dd-stat">
+                    <span className="dd-stat-value">{user.semester.split(' ')[0]}</span>
+                    <span className="dd-stat-label">Semester</span>
+                  </div>
                 </div>
-                <div className="dd-stat">
-                  <span className="dd-stat-value">{user.overallAttendance}%</span>
-                  <span className="dd-stat-label">Attendance</span>
-                </div>
-                <div className="dd-stat">
-                  <span className="dd-stat-value">{user.semester.split(' ')[0]}</span>
-                  <span className="dd-stat-label">Semester</span>
-                </div>
-              </div>
+              )}
 
               <div className="dropdown-menu">
                 <Link

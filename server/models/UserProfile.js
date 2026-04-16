@@ -9,6 +9,7 @@ const UserProfileSchema = new mongoose.Schema({
   notifications: Number,
   regNumber: String,
   email: String,
+  password: { type: String, default: "1234" },
   department: String,
   semester: String,
   section: String,

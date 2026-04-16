@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, BookOpen, GraduationCap, ClipboardList, LogOut, Bell } from 'lucide-react';
 import './Sidebar.css';
 
-function Sidebar({ onLogout }) {
+function Sidebar({ userRole, onLogout }) {
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -18,25 +18,34 @@ function Sidebar({ onLogout }) {
       </div>
 
       <nav className="sidebar-nav">
-        <NavLink to="/dashboard" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          <LayoutDashboard size={20} />
-          <span>Dashboard</span>
-        </NavLink>
+        {userRole === 'Professor' ? (
+          <NavLink to="/prof-dashboard" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+            <ClipboardList size={20} />
+            <span>Submissions</span>
+          </NavLink>
+        ) : (
+          <>
+            <NavLink to="/dashboard" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+              <LayoutDashboard size={20} />
+              <span>Dashboard</span>
+            </NavLink>
 
-        <NavLink to="/assignments" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          <BookOpen size={20} />
-          <span>Assignments</span>
-        </NavLink>
+            <NavLink to="/assignments" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+              <BookOpen size={20} />
+              <span>Assignments</span>
+            </NavLink>
 
-        <NavLink to="/courses" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          <GraduationCap size={20} />
-          <span>Courses</span>
-        </NavLink>
+            <NavLink to="/courses" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+              <GraduationCap size={20} />
+              <span>Courses</span>
+            </NavLink>
 
-        <NavLink to="/results" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          <ClipboardList size={20} />
-          <span>Exam Results</span>
-        </NavLink>
+            <NavLink to="/results" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+              <ClipboardList size={20} />
+              <span>Exam Results</span>
+            </NavLink>
+          </>
+        )}
       </nav>
 
       <div className="sidebar-footer">

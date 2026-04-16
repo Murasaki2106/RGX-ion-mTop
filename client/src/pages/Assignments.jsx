@@ -9,16 +9,17 @@ function formatDate(dateStr) {
   return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 }
 
-function Assignments() {
+function Assignments({ userEmail }) {
   const [data, setData] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/assignments')
+    if (!userEmail) return;
+    fetch(`http://localhost:5000/api/assignments?email=${encodeURIComponent(userEmail)}`)
       .then(res => res.json())
       .then(data => setData(data.assignments))
       .catch(console.error);
-  }, []);
+  }, [userEmail]);
 
   return (
     <div className="assignments-page">

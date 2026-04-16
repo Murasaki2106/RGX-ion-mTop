@@ -12,14 +12,10 @@ const AssignmentSchema = new mongoose.Schema({
   faculty: String,
   dueDate: Date,
   assignedDate: Date,
-  status: String,
+  status: { type: String, default: 'active' }, // just 'active' or 'expired'
   description: String,
   instructions: String,
-  maxMarks: Number,
-  marksReceived: { type: Number, default: null },
-  submittedAt: { type: Date, default: null },
-  submittedFiles: [SubmittedFileSchema],
-  feedback: { type: String, default: null }
+  maxMarks: Number
 });
 
 module.exports = mongoose.model('Assignment', AssignmentSchema);
