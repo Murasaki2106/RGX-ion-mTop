@@ -64,6 +64,7 @@ function App() {
               <>
                 <Route index element={<Navigate to="/prof-dashboard" replace />} />
                 <Route path="prof-dashboard" element={<ProfessorDashboard userEmail={userEmail} />} />
+                <Route path="profile" element={<Profile userEmail={userEmail} />} />
                 <Route path="*" element={<Navigate to="/prof-dashboard" replace />} />
               </>
             ) : (
@@ -72,7 +73,7 @@ function App() {
                 <Route path="dashboard" element={<Dashboard userEmail={userEmail} />} />
                 <Route path="assignments" element={<Assignments userEmail={userEmail} />} />
                 <Route path="assignments/:id" element={<AssignmentDetail userEmail={userEmail} />} />
-                <Route path="courses" element={<Courses />} />
+                <Route path="courses" element={<Courses userEmail={userEmail} />} />
                 <Route path="profile" element={<Profile userEmail={userEmail} />} />
                 <Route path="results" element={<ExamResults userEmail={userEmail} />} />
                 <Route path="*" element={<Navigate to="/dashboard" replace />} />

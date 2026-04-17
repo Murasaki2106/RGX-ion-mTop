@@ -9,6 +9,7 @@ const Assignment = require('./models/Assignment');
 const ExamResult = require('./models/ExamResult');
 const Submission = require('./models/Submission');
 const AttendanceRecord = require('./models/AttendanceRecord');
+const Notification = require('./models/Notification');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -22,6 +23,25 @@ mongoose.connect(MONGODB_URI)
   .then(() => console.log('Connected to MongoDB via Mongoose.'))
   .catch(err => console.error('Failed to connect to MongoDB', err));
 
+
+// -- HELPER FUNCTIONS --
+async function getDynamicCourseAttendance(email, courses) {
+  if (!email) return courses.map(c => c.attendance || 0);
+
+  const fetchRecords = await AttendanceRecord.find({ studentEmail: email });
+  const recordsByCourse = {};
+  fetchRecords.forEach(r => {
+    if (!recordsByCourse[r.courseId]) recordsByCourse[r.courseId] = [];
+    recordsByCourse[r.courseId].push(r);
+  });
+
+  return courses.map(c => {
+    const recs = recordsByCourse[c.id] || [];
+    if (recs.length === 0) return c.attendance || 0; // Fallback
+    const present = recs.filter(r => r.status === 'Present').length;
+    return Math.round((present / recs.length) * 100);
+  });
+}
 
 // -- AUTH -- 
 app.post('/api/login', async (req, res) => {
@@ -80,9 +100,10 @@ app.get('/api/dashboard', async (req, res) => {
       // Compute Overall Attendance dynamically as the exact average of individual courses
       const allCourses = await Course.find({});
       if (allCourses.length > 0) {
-        const totalAttendance = allCourses.reduce((sum, c) => sum + (c.attendance || 0), 0);
+        const dynamicAtts = await getDynamicCourseAttendance(email, allCourses);
+        const totalAttendance = dynamicAtts.reduce((sum, val) => sum + val, 0);
         const avgAttendance = totalAttendance / allCourses.length;
-        userObj.overallAttendance = Math.round(avgAttendance * 10) / 10; // Round to 1 decimal place
+        userObj.overallAttendance = Math.round(avgAttendance * 10) / 10;
       } else {
         userObj.overallAttendance = 0;
       }
@@ -170,6 +191,19 @@ app.post('/api/assignments/:id/submit', async (req, res) => {
     }
     await sub.save();
     
+    // Find Professor to notify
+    const profs = await UserProfile.find({ role: 'Professor' });
+    const profToNotify = profs.find(p => p.name === assignment.faculty) || profs[0];
+    if (profToNotify) {
+      const notif = new Notification({
+        userEmail: profToNotify.email,
+        title: `New Submission: ${assignment.title}`,
+        message: `${student ? student.name : 'A student'} has submitted the assignment for ${assignment.course}.`,
+        type: 'submission_made'
+      });
+      await notif.save();
+    }
+
     const updatedAssignment = {
       ...assignment.toObject(),
       status: sub.status,
@@ -223,6 +257,17 @@ app.post('/api/assignments', async (req, res) => {
     });
 
     await newAssignment.save();
+    
+    // Fetch all students to notify
+    const students = await UserProfile.find({ role: 'Student' });
+    const notifications = students.map(student => ({
+      userEmail: student.email,
+      title: `New Assignment Create: ${title}`,
+      message: `A new assignment has been posted for ${course} by ${faculty}. Due date: ${new Date(dueDate).toLocaleDateString()}`,
+      type: 'assignment_created'
+    }));
+    await Notification.insertMany(notifications);
+
     res.json({ success: true, assignment: newAssignment });
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
@@ -320,7 +365,19 @@ app.post('/api/attendance', async (req, res) => {
 // -- GENERAL --
 app.get('/api/courses', async (req, res) => {
   try {
+    const email = req.query.email;
     const courses = await Course.find({});
+    
+    // Mix in dynamic personal attendance for the active student email
+    if (email) {
+      const dynamicAtts = await getDynamicCourseAttendance(email, courses);
+      const computedCourses = courses.map((c, i) => ({
+        ...c.toObject(),
+        attendance: dynamicAtts[i]
+      }));
+      return res.json({ courses: computedCourses });
+    }
+
     res.json({ courses });
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
@@ -330,9 +387,20 @@ app.get('/api/courses', async (req, res) => {
 app.get('/api/profile', async (req, res) => {
   try {
     const email = req.query.email;
-    const profile = await UserProfile.findOne(email ? { email } : {});
-    const totalCourses = await Course.countDocuments({});
-    res.json({ profile, totalCourses });
+    let profile = await UserProfile.findOne(email ? { email } : {});
+    const courses = await Course.find({});
+    
+    // Inject correct global attendance
+    if (profile && email) {
+      profile = profile.toObject();
+      if (courses.length > 0) {
+        const dynamicAtts = await getDynamicCourseAttendance(email, courses);
+        const totalAttendance = dynamicAtts.reduce((sum, val) => sum + val, 0);
+        profile.overallAttendance = Math.round((totalAttendance / courses.length) * 10) / 10;
+      }
+    }
+
+    res.json({ profile, totalCourses: courses.length });
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
   }
@@ -358,6 +426,31 @@ app.get('/api/results', async (req, res) => {
     });
 
     res.json({ semesters, results, cgpa: profile ? profile.cgpa : 0 });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// -- NOTIFICATIONS --
+app.get('/api/notifications', async (req, res) => {
+  try {
+    const email = req.query.email;
+    if (!email) return res.status(400).json({ error: 'Email required' });
+    
+    const notifications = await Notification.find({ userEmail: email }).sort({ createdAt: -1 });
+    res.json({ notifications });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.post('/api/notifications/read', async (req, res) => {
+  try {
+    const email = req.query.email;
+    if (!email) return res.status(400).json({ error: 'Email required' });
+    
+    await Notification.updateMany({ userEmail: email, read: false }, { read: true });
+    res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
   }

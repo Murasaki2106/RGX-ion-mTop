@@ -10,15 +10,17 @@ function getAttendanceColor(att) {
   return '#EF4444';
 }
 
-function Courses() {
+function Courses({ userEmail }) {
   const [data, setData] = useState([]);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/courses')
-      .then(res => res.json())
-      .then(data => setData(data.courses))
-      .catch(console.error);
-  }, []);
+    if (userEmail) {
+      fetch(`http://localhost:5000/api/courses?email=${encodeURIComponent(userEmail)}`)
+        .then(res => res.json())
+        .then(data => setData(data.courses))
+        .catch(console.error);
+    }
+  }, [userEmail]);
 
   return (
     <div className="courses-page">

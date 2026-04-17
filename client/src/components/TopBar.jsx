@@ -26,6 +26,10 @@ function TopBar({ userEmail, onLogout }) {
 
   if (!user) return null;
 
+  const avatarUrl = user.avatar && user.avatar.trim() !== '' 
+      ? user.avatar 
+      : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=3B82F6&color=fff&size=150`;
+
   return (
     <div className="topbar">
       <div style={{ position: 'relative' }}>
@@ -33,7 +37,7 @@ function TopBar({ userEmail, onLogout }) {
           className={`profile-trigger ${open ? 'open' : ''}`}
           onClick={() => setOpen(!open)}
         >
-          <img src={user.avatar} alt="Profile" className="trigger-avatar" />
+          <img src={avatarUrl} alt="Profile" className="trigger-avatar" />
           <div className="trigger-info">
             <span className="trigger-name">{user.name}</span>
             <span className="trigger-role">{user.regNumber}</span>
@@ -46,7 +50,7 @@ function TopBar({ userEmail, onLogout }) {
             <div className="dropdown-overlay" onClick={() => setOpen(false)} />
             <div className="profile-dropdown" ref={dropdownRef}>
               <div className="dropdown-header">
-                <img src={user.avatar} alt="Profile" className="dd-avatar" />
+                <img src={avatarUrl} alt="Profile" className="dd-avatar" />
                 <div className="dd-info">
                   <h4>{user.name}</h4>
                   <p>{user.department}</p>
